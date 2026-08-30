@@ -18,7 +18,8 @@ COPY requirements.remote.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.remote.txt
 
 COPY . ./
-ENV KERR_QNM_TOOLKIT_RUNTIME=/opt/kerr-qnm-runtime \
+ENV PYTHONPATH=/opt/kerr-qnm-toolkit \
+    KERR_QNM_TOOLKIT_RUNTIME=/opt/kerr-qnm-runtime \
     KERR_QNM_WORKSPACE_ROOT=/workspace \
     PYTHONUNBUFFERED=1 \
     PORT=8000
