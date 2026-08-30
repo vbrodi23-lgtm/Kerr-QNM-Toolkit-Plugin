@@ -20,7 +20,7 @@ Use one replica for this personal workspace. Multiple replicas must not share a 
 
 - Terminate TLS at a stable HTTPS hostname.
 - Forward the original `Host` and set that hostname in `KERR_QNM_ALLOWED_HOSTS`.
-- Keep the container private behind an OAuth 2.1 gateway; see `AUTHENTICATION.md`.
+- Configure the built-in single-owner OAuth 2.1 service, or place the container behind a compatible external OAuth 2.1 authorization service; see `AUTHENTICATION.md`.
 - Point the public MCP URL to `https://your-host.example/mcp`.
 - Keep `/healthz` available to the hosting platform.
 
@@ -30,6 +30,6 @@ Build the image, start one container, call `/healthz`, connect with an MCP inspe
 
 ## 5. Connect and submit
 
-Create the plugin in ChatGPT's plugin developer interface using the production MCP URL and OAuth configuration. Upload the `skills/kerr-qnm-toolkit` skill bundle. Test the positive and negative prompts in `submission/PLUGIN_SUBMISSION.md`. Once connected to the account, the hosted service—not this PC—does the computation.
+Create the plugin in ChatGPT's plugin developer interface using the production MCP URL and its discovered OAuth configuration. Upload the `skills/kerr-qnm-toolkit` skill bundle. Test the positive and negative prompts in `submission/PLUGIN_SUBMISSION.md`. Once connected to the account, the hosted service—not this PC—does the computation.
 
 Public directory submission additionally requires verified developer identity, a verified domain, privacy/terms/support URLs, production branding, and review approval. A private account-scoped deployment does not become public merely because its MCP endpoint is hosted.

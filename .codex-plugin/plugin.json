@@ -1,6 +1,6 @@
 {
   "name": "kerr-qnm-toolkit",
-  "version": "1.1.0+codex.20260830013000",
+  "version": "1.2.0+codex.20260830020000",
   "description": "Remote Linux Julia, Python, NumPy, SciPy, numerical, testing, source, and Git tools for Kerr black-hole quasinormal-mode research.",
   "author": {
     "name": "Kerr QNM Toolkit contributors"

@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import hmac
 import os
 from typing import Any, Literal
 
@@ -12,13 +11,22 @@ from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
-from starlette.responses import JSONResponse, PlainTextResponse
+from starlette.responses import JSONResponse, Response
 
+from personal_oauth import (
+    OAuthBearerGate,
+    about_page,
+    authorization_server_metadata,
+    authorize,
+    oauth_is_configured,
+    protected_resource_metadata,
+    token,
+)
 from toolkit_runtime import runtime
 from toolkit_runtime.remote_workspace import apply_patch, configured_workspace_root, git_diff, list_files, read_text_file, search_text
 
 
-SERVER_VERSION = "1.1.0"
+SERVER_VERSION = "1.2.0"
 READ_ONLY = ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
 EXECUTE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=True)
 WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=False)
@@ -42,7 +50,33 @@ def _runtime_root() -> str | None:
 
 @mcp.custom_route("/healthz", methods=["GET"])
 async def health(_: Request) -> JSONResponse:
-    return JSONResponse({"ok": True, "service": "kerr-qnm-toolkit", "version": SERVER_VERSION})
+    return JSONResponse({"ok": True, "service": "kerr-qnm-toolkit", "version": SERVER_VERSION, "oauth_configured": oauth_is_configured()})
+
+
+@mcp.custom_route("/.well-known/oauth-protected-resource", methods=["GET"])
+@mcp.custom_route("/.well-known/oauth-protected-resource/mcp", methods=["GET"])
+async def oauth_protected_resource(_: Request) -> JSONResponse:
+    return protected_resource_metadata()
+
+
+@mcp.custom_route("/.well-known/oauth-authorization-server", methods=["GET"])
+async def oauth_metadata(_: Request) -> JSONResponse:
+    return authorization_server_metadata()
+
+
+@mcp.custom_route("/oauth/about", methods=["GET"])
+async def oauth_about(_: Request) -> Response:
+    return about_page()
+
+
+@mcp.custom_route("/oauth/authorize", methods=["GET", "POST"])
+async def oauth_authorize(request: Request) -> Response:
+    return await authorize(request)
+
+
+@mcp.custom_route("/oauth/token", methods=["POST"])
+async def oauth_token(request: Request) -> Response:
+    return await token(request)
 
 
 @mcp.tool(title="Inspect toolchain", annotations=READ_ONLY)
@@ -188,42 +222,13 @@ def kerr_qnm_numerical_canary(
     return runtime.numerical_canary(mode=mode, runtime_root=_runtime_root(), timeout_seconds=timeout_seconds)
 
 
-class BearerTokenGate:
-    """Small deployment gate; use an OAuth 2.1 gateway for a public ChatGPT plugin."""
-
-    def __init__(self, app: Any) -> None:
-        self.app = app
-
-    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
-        if scope.get("type") != "http" or scope.get("path") != "/mcp":
-            await self.app(scope, receive, send)
-            return
-        configured = os.environ.get("KERR_QNM_MCP_BEARER_TOKEN")
-        anonymous = os.environ.get("KERR_QNM_INSECURE_ALLOW_ANONYMOUS") == "1"
-        if anonymous:
-            await self.app(scope, receive, send)
-            return
-        if not configured:
-            response = PlainTextResponse("MCP authentication is not configured.", status_code=503)
-            await response(scope, receive, send)
-            return
-        headers = {key.lower(): value for key, value in scope.get("headers", [])}
-        supplied = headers.get(b"authorization", b"").decode("latin-1")
-        expected = f"Bearer {configured}"
-        if not hmac.compare_digest(supplied, expected):
-            response = PlainTextResponse("Unauthorized", status_code=401, headers={"WWW-Authenticate": "Bearer"})
-            await response(scope, receive, send)
-            return
-        await self.app(scope, receive, send)
-
-
 def _transport_security() -> TransportSecuritySettings:
     hosts = [value.strip() for value in os.environ.get("KERR_QNM_ALLOWED_HOSTS", "localhost,localhost:*,127.0.0.1,127.0.0.1:*").split(",") if value.strip()]
     origins = [value.strip() for value in os.environ.get("KERR_QNM_ALLOWED_ORIGINS", "").split(",") if value.strip()]
     return TransportSecuritySettings(allowed_hosts=hosts, allowed_origins=origins)
 
 
-app = BearerTokenGate(
+app = OAuthBearerGate(
     mcp.streamable_http_app(
         streamable_http_path="/mcp",
         json_response=True,
