@@ -26,7 +26,7 @@ from toolkit_runtime import runtime
 from toolkit_runtime.remote_workspace import apply_patch, configured_workspace_root, git_diff, list_files, read_text_file, search_text
 
 
-SERVER_VERSION = "1.2.0"
+SERVER_VERSION = "1.2.1"
 READ_ONLY = ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
 EXECUTE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=True)
 WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=False)

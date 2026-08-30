@@ -12,7 +12,7 @@ GitHub is optional, but it is the most common deployment source. The two large r
 
 ## 2. Give the container persistent storage
 
-Mount a durable volume at `/workspace`. If `KERR_QNM_SOLVER_REPOSITORY` names a public HTTPS or SSH repository, the container clones it only when that volume is empty. It never automatically pulls over local work. For a private repository, use the hosting platform's Git credential or SSH-key secret support; do not put credentials in the repository URL.
+Mount a hosting-platform-managed durable volume at `/workspace` (the Dockerfile intentionally does not declare `VOLUME`, because platforms such as Railway require volumes to be attached in their own configuration). If `KERR_QNM_SOLVER_REPOSITORY` names a public HTTPS or SSH repository, the container clones it only when that volume is empty. It never automatically pulls over local work. For a private repository, use the hosting platform's Git credential or SSH-key secret support; do not put credentials in the repository URL.
 
 Use one replica for this personal workspace. Multiple replicas must not share a writable checkout without a coordination design.
 
