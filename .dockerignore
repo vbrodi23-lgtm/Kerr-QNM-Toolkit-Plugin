@@ -1,0 +1,7 @@
+.git
+.github
+.env
+outputs
+work
+**/__pycache__
+**/*.pyc

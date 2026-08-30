@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "profile_id": "kerr-qnm-toolkit-linux-x86_64-v1",
+  "platform": {
+    "operating_system": "Linux",
+    "architecture": "x86_64",
+    "bits": 64
+  },
+  "julia": {
+    "version": "1.10.11",
+    "archive": "julia-1.10.11-linux-x86_64.tar.gz",
+    "sha256": "fb49c6b174600cd2051e37ba3f7330f8acf06dd00bce609bab6611387fdb37bf"
+  },
+  "python": {
+    "implementation": "CPython",
+    "version": "3.12.13",
+    "archive": "cpython-3.12.13+20260728-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "7ceaf4360f4b4ab44f31d8217cfdc70df8e12b61d9561b4900ee7af87176e50d"
+  },
+  "python_packages": [
+    {
+      "name": "numpy",
+      "version": "2.4.6",
+      "wheel": "numpy-2.4.6-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "wheel_sha256": "90f9849678c75fe7afa2d348ac842c168b0a4d3d61919687216dfc547976d853",
+      "source_archive": "numpy-2.4.6.tar.gz",
+      "source_sha256": "f3a3570c4a2a16746ac2c31a7c7c7b0c186b95ce902e33db6f28094ed7387dda"
+    },
+    {
+      "name": "scipy",
+      "version": "1.18.0",
+      "wheel": "scipy-1.18.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "wheel_sha256": "1f55797419e16e7f30cf88ffb3113ce0467f00cfe3f70d5c281730b21769bfc2",
+      "source_archive": "scipy-1.18.0.tar.gz",
+      "source_sha256": "67b2ad2ad54c72ca6d04975a9b2df8c3638c34ddd5b28738e94fc2b57929d378"
+    }
+  ],
+  "julia_depot_seed": {
+    "archive": "julia-scientific-depot-seed.tar.gz",
+    "sha256": "8a03411fcc09e11adeb18b4822519ef822e96548d8fb31caae292f2b8f234aca"
+  }
+}

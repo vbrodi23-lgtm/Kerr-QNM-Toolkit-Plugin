@@ -1,0 +1,9 @@
+name = "ToolkitCanaryProject"
+uuid = "7b665b9e-4259-4bc5-b0e9-c0949c04dc44"
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

@@ -1,0 +1,40 @@
+{
+  "name": "kerr-qnm-toolkit",
+  "version": "1.1.0+codex.20260830013000",
+  "description": "Remote Linux Julia, Python, NumPy, SciPy, numerical, testing, source, and Git tools for Kerr black-hole quasinormal-mode research.",
+  "author": {
+    "name": "Kerr QNM Toolkit contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "julia",
+    "python",
+    "numpy",
+    "scipy",
+    "kerr",
+    "black-hole",
+    "quasinormal-modes",
+    "perturbation-theory"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Kerr QNM Toolkit",
+    "shortDescription": "A remote Linux lab for Kerr QNM solver work.",
+    "longDescription": "Develop, inspect, edit, run, test, and audit Kerr black-hole perturbation projects in a persistent remote Linux container with Julia, CPython, NumPy, SciPy, cross-language protocol checks, a reproducible toolchain, and Git-aware workspace diagnostics.",
+    "developerName": "Kerr QNM Toolkit contributors",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Inspect my remote Kerr QNM solver workspace.",
+      "Run the Julia-Python numerical canary in the Linux container.",
+      "Review, patch, and test this Julia and Python solver safely."
+    ],
+    "brandColor": "#5A31A5",
+    "composerIcon": "./assets/kerr-qnm-toolkit.png",
+    "logo": "./assets/kerr-qnm-toolkit.png"
+  }
+}

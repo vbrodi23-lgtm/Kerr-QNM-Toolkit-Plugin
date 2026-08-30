@@ -1,0 +1,19 @@
+services:
+  kerr-qnm-toolkit:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      KERR_QNM_ALLOWED_HOSTS: ${KERR_QNM_ALLOWED_HOSTS:-localhost,localhost:*,127.0.0.1,127.0.0.1:*}
+      KERR_QNM_ALLOWED_ORIGINS: ${KERR_QNM_ALLOWED_ORIGINS:-}
+      KERR_QNM_MCP_BEARER_TOKEN: ${KERR_QNM_MCP_BEARER_TOKEN:?set a long random token}
+      KERR_QNM_SOLVER_REPOSITORY: ${KERR_QNM_SOLVER_REPOSITORY:-}
+      KERR_QNM_SOLVER_REF: ${KERR_QNM_SOLVER_REF:-}
+    volumes:
+      - solver-workspace:/workspace
+      - toolkit-state:/state
+
+volumes:
+  solver-workspace:
+  toolkit-state:
