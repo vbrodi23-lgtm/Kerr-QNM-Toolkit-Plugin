@@ -1,4 +1,4 @@
 interface:
   display_name: "Kerr QNM Toolkit"
-  short_description: "Develop and audit Kerr QNM solvers remotely"
-  default_prompt: "Use $kerr-qnm-toolkit to inspect my remote solver workspace, preserve its scientific conventions, and run bounded Julia/Python checks."
+  short_description: "Develop and audit Kerr QNM solvers in Codex Cloud"
+  default_prompt: "Use $kerr-qnm-toolkit to inspect this solver repository, preserve its scientific conventions, and run bounded local Julia/Python checks."

@@ -1,3 +1,0 @@
-mcp==2.0.0
-starlette>=0.47,<1
-uvicorn[standard]>=0.35,<1

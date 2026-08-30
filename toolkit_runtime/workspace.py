@@ -1,4 +1,4 @@
-"""Workspace-only source tools for the remote Kerr QNM service."""
+"""Bounded source operations for a local Codex Cloud checkout."""
 
 from __future__ import annotations
 
@@ -34,22 +34,25 @@ _TEXT_SUFFIXES = {
 }
 
 
-def configured_workspace_root() -> Path:
-    value = os.environ.get("KERR_QNM_WORKSPACE_ROOT", "/workspace")
+def workspace_root(value: str) -> Path:
+    """Resolve an explicit non-root workspace directory."""
+
     raw = Path(value).expanduser()
     if not raw.is_absolute():
-        raise ToolkitError("KERR_QNM_WORKSPACE_ROOT must be an absolute path.")
-    raw.mkdir(parents=True, exist_ok=True)
-    root = raw.resolve(strict=True)
+        raise ToolkitError("workspace_root must be an absolute path.")
+    try:
+        root = raw.resolve(strict=True)
+    except FileNotFoundError as exc:
+        raise ToolkitError(f"workspace_root does not exist: {raw}") from exc
     if root == Path(root.anchor):
-        raise ToolkitError("KERR_QNM_WORKSPACE_ROOT must not be a filesystem root.")
+        raise ToolkitError("workspace_root must not be the filesystem root.")
     if not root.is_dir():
-        raise ToolkitError("KERR_QNM_WORKSPACE_ROOT must be a directory.")
+        raise ToolkitError("workspace_root must be a directory.")
     return root
 
 
-def _relative_file(relative: str, *, must_exist: bool = True) -> tuple[Path, Path]:
-    root = configured_workspace_root()
+def _relative_file(workspace: str, relative: str, *, must_exist: bool = True) -> tuple[Path, Path]:
+    root = workspace_root(workspace)
     path = _workspace_path(root, relative, "path_relative", must_exist=must_exist)
     return root, path
 
@@ -58,8 +61,8 @@ def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
-def list_files(path_relative: str = ".", glob_pattern: str = "**/*", max_files: int = 1000) -> dict[str, Any]:
-    root, base = _relative_file(path_relative)
+def list_files(workspace: str, path_relative: str = ".", glob_pattern: str = "**/*", max_files: int = 1000) -> dict[str, Any]:
+    root, base = _relative_file(workspace, path_relative)
     if not base.is_dir():
         raise ToolkitError("path_relative must identify a directory.")
     limit = _bounded_integer(max_files, "max_files", 1, 5000)
@@ -79,8 +82,8 @@ def list_files(path_relative: str = ".", glob_pattern: str = "**/*", max_files: 
     return {"path": base.relative_to(root).as_posix(), "files": matches, "count": len(matches), "scanned": scanned, "truncated": len(matches) >= limit}
 
 
-def read_text_file(path_relative: str, max_chars: int = 120_000) -> dict[str, Any]:
-    root, path = _relative_file(path_relative)
+def read_text_file(workspace: str, path_relative: str, max_chars: int = 120_000) -> dict[str, Any]:
+    root, path = _relative_file(workspace, path_relative)
     if not path.is_file():
         raise ToolkitError("path_relative must identify a file.")
     limit = _bounded_integer(max_chars, "max_chars", 1000, 250_000)
@@ -100,13 +103,14 @@ def read_text_file(path_relative: str, max_chars: int = 120_000) -> dict[str, An
 
 
 def search_text(
+    workspace: str,
     query: str,
     path_relative: str = ".",
     glob_pattern: str = "**/*",
     case_sensitive: bool = False,
     max_results: int = 200,
 ) -> dict[str, Any]:
-    root, base = _relative_file(path_relative)
+    root, base = _relative_file(workspace, path_relative)
     if not base.is_dir():
         raise ToolkitError("path_relative must identify a directory.")
     if not isinstance(query, str) or not query or len(query) > 1000 or "\x00" in query:
@@ -136,8 +140,8 @@ def search_text(
     return {"query": query, "matches": results, "count": len(results), "files_scanned": files_scanned, "truncated": False}
 
 
-def git_diff(path_relative: str = ".", staged: bool = False) -> dict[str, Any]:
-    root, selected = _relative_file(path_relative)
+def git_diff(workspace: str, path_relative: str = ".", staged: bool = False) -> dict[str, Any]:
+    root, selected = _relative_file(workspace, path_relative)
     command = ["git", "-C", str(root), "diff", "--no-ext-diff", "--no-color", "--unified=3"]
     if staged:
         command.append("--cached")
@@ -147,8 +151,8 @@ def git_diff(path_relative: str = ".", staged: bool = False) -> dict[str, Any]:
     return result
 
 
-def apply_patch(patch: str, allow_deletes: bool = False) -> dict[str, Any]:
-    root = configured_workspace_root()
+def apply_patch(workspace: str, patch: str, allow_deletes: bool = False) -> dict[str, Any]:
+    root = workspace_root(workspace)
     if not isinstance(patch, str) or not patch.strip() or "\x00" in patch:
         raise ToolkitError("patch must be non-empty UTF-8 unified-diff text without NUL bytes.")
     if len(patch.encode("utf-8")) > 1_048_576:

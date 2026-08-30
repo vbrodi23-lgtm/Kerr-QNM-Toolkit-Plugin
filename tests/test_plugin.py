@@ -12,7 +12,7 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 
-from toolkit_runtime import remote_workspace, runtime  # noqa: E402
+from toolkit_runtime import runtime, workspace  # noqa: E402
 
 
 class KerrQnmToolkitTests(unittest.TestCase):
@@ -41,7 +41,7 @@ class KerrQnmToolkitTests(unittest.TestCase):
             with self.assertRaises(runtime.ToolkitError):
                 runtime._workspace_path(root, "../outside.jl", "script_relative")
 
-    def test_remote_credentials_are_scrubbed(self) -> None:
+    def test_git_credentials_are_scrubbed(self) -> None:
         value = runtime._scrub_remote("https://user:secret@example.com/owner/repo.git?token=hidden")
         self.assertEqual(value, "https://example.com/owner/repo.git")
 
@@ -81,30 +81,22 @@ class KerrQnmToolkitTests(unittest.TestCase):
         self.assertIn("src/solve.jl", report["likely_entrypoints"])
         self.assertIn("tests/test_solver.py", report["tests"])
 
-    def test_remote_workspace_read_list_and_search_are_contained(self) -> None:
+    def test_workspace_read_list_and_search_are_contained(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             source = root / "src"
             source.mkdir()
             (source / "solver.jl").write_text("function solve_mode(spin)\n    spin + 1\nend\n", encoding="utf-8")
-            previous = os.environ.get("KERR_QNM_WORKSPACE_ROOT")
-            os.environ["KERR_QNM_WORKSPACE_ROOT"] = str(root)
-            try:
-                listing = remote_workspace.list_files(".", "**/*.jl")
-                read = remote_workspace.read_text_file("src/solver.jl")
-                search = remote_workspace.search_text("solve_mode", glob_pattern="**/*.jl")
-                with self.assertRaises(runtime.ToolkitError):
-                    remote_workspace.read_text_file("../outside.txt")
-            finally:
-                if previous is None:
-                    os.environ.pop("KERR_QNM_WORKSPACE_ROOT", None)
-                else:
-                    os.environ["KERR_QNM_WORKSPACE_ROOT"] = previous
+            listing = workspace.list_files(str(root), ".", "**/*.jl")
+            read = workspace.read_text_file(str(root), "src/solver.jl")
+            search = workspace.search_text(str(root), "solve_mode", glob_pattern="**/*.jl")
+            with self.assertRaises(runtime.ToolkitError):
+                workspace.read_text_file(str(root), "../outside.txt")
         self.assertEqual(listing["files"], ["src/solver.jl"])
         self.assertIn("function solve_mode", read["content"])
         self.assertEqual(search["matches"][0]["line"], 1)
 
-    def test_remote_patch_is_checked_and_deletion_is_explicit(self) -> None:
+    def test_workspace_patch_is_checked_and_deletion_is_explicit(self) -> None:
         if not shutil_which("git"):
             self.skipTest("git is unavailable")
         with tempfile.TemporaryDirectory() as temporary:
@@ -112,22 +104,16 @@ class KerrQnmToolkitTests(unittest.TestCase):
             subprocess.run(["git", "init", "-q", str(root)], check=True)
             target = root / "solver.py"
             target.write_text("old_value = 1\n", encoding="utf-8")
-            previous = os.environ.get("KERR_QNM_WORKSPACE_ROOT")
-            os.environ["KERR_QNM_WORKSPACE_ROOT"] = str(root)
-            try:
-                result = remote_workspace.apply_patch(
-                    "--- a/solver.py\n+++ b/solver.py\n@@ -1 +1 @@\n-old_value = 1\n+new_value = 2\n"
+            result = workspace.apply_patch(
+                str(root),
+                "--- a/solver.py\n+++ b/solver.py\n@@ -1 +1 @@\n-old_value = 1\n+new_value = 2\n",
+            )
+            changed_text = target.read_text(encoding="utf-8")
+            with self.assertRaises(runtime.ToolkitError):
+                workspace.apply_patch(
+                    str(root),
+                    "--- a/solver.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-new_value = 2\n",
                 )
-                changed_text = target.read_text(encoding="utf-8")
-                with self.assertRaises(runtime.ToolkitError):
-                    remote_workspace.apply_patch(
-                        "--- a/solver.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-new_value = 2\n"
-                    )
-            finally:
-                if previous is None:
-                    os.environ.pop("KERR_QNM_WORKSPACE_ROOT", None)
-                else:
-                    os.environ["KERR_QNM_WORKSPACE_ROOT"] = previous
         self.assertTrue(result["applied"], result)
         self.assertEqual(changed_text, "new_value = 2\n")
 
@@ -187,16 +173,19 @@ class KerrQnmToolkitTests(unittest.TestCase):
         self.assertTrue(report["is_repository"])
         self.assertEqual(report["remotes"]["origin"], ["https://example.com/owner/repo.git"])
 
-    def test_mcp_initialize_and_tool_listing(self) -> None:
-        requests = "\n".join(
-            [
-                json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05"}}),
-                json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
-            ]
-        ) + "\n"
+    def test_local_cli_inspects_workspace(self) -> None:
         completed = subprocess.run(
-            [sys.executable, str(PLUGIN_ROOT / "toolkit_runtime" / "server.py")],
-            input=requests,
+            [
+                sys.executable,
+                str(PLUGIN_ROOT / "scripts" / "kerr_qnm_toolkit.py"),
+                "inspect-workspace",
+                "--workspace-root",
+                str(PLUGIN_ROOT),
+                "--max-depth",
+                "2",
+                "--max-files",
+                "500",
+            ],
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -204,24 +193,18 @@ class KerrQnmToolkitTests(unittest.TestCase):
             cwd=PLUGIN_ROOT,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        replies = [json.loads(line) for line in completed.stdout.splitlines()]
-        self.assertEqual(replies[0]["result"]["serverInfo"]["name"], "kerr-qnm-toolkit")
-        names = {tool["name"] for tool in replies[1]["result"]["tools"]}
-        self.assertEqual(
-            names,
-            {
-                "kerr_qnm_toolchain_status",
-                "kerr_qnm_prepare_toolchain",
-                "kerr_qnm_inspect_workspace",
-                "kerr_qnm_git_inspect",
-                "kerr_qnm_run_julia_file",
-                "kerr_qnm_run_python_file",
-                "kerr_qnm_julia_project",
-                "kerr_qnm_python_tests",
-                "kerr_qnm_jsonl_probe",
-                "kerr_qnm_numerical_canary",
-            },
-        )
+        report = json.loads(completed.stdout)
+        self.assertIn("julia_projects", report)
+        self.assertIn("python_projects", report)
+
+    def test_manifest_is_cloud_safe_and_repo_backed(self) -> None:
+        manifest = json.loads((PLUGIN_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertNotIn("mcpServers", manifest)
+        self.assertFalse((PLUGIN_ROOT / ".mcp.json").exists())
+        marketplace = json.loads((PLUGIN_ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
+        entry = marketplace["plugins"][0]
+        self.assertEqual(entry["name"], manifest["name"])
+        self.assertEqual(entry["source"], {"source": "local", "path": "."})
 
     def test_managed_cross_language_canaries_when_provisioned(self) -> None:
         status = runtime.toolchain_status()

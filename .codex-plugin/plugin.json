@@ -1,10 +1,12 @@
 {
   "name": "kerr-qnm-toolkit",
-  "version": "1.1.0+codex.20260830013000",
-  "description": "Remote Linux Julia, Python, NumPy, SciPy, numerical, testing, source, and Git tools for Kerr black-hole quasinormal-mode research.",
+  "version": "2.0.0",
+  "description": "Repo-backed Julia, Python, NumPy, SciPy, numerical, testing, source, and Git workflows for Kerr black-hole quasinormal-mode research in Codex Cloud.",
   "author": {
     "name": "Kerr QNM Toolkit contributors"
   },
+  "homepage": "https://github.com/vbrodi23-lgtm/Kerr-QNM-Toolkit-Plugin",
+  "repository": "https://github.com/vbrodi23-lgtm/Kerr-QNM-Toolkit-Plugin",
   "license": "MIT",
   "keywords": [
     "julia",
@@ -17,11 +19,10 @@
     "perturbation-theory"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Kerr QNM Toolkit",
-    "shortDescription": "A remote Linux lab for Kerr QNM solver work.",
-    "longDescription": "Develop, inspect, edit, run, test, and audit Kerr black-hole perturbation projects in a persistent remote Linux container with Julia, CPython, NumPy, SciPy, cross-language protocol checks, a reproducible toolchain, and Git-aware workspace diagnostics.",
+    "shortDescription": "Repo-native Julia/Python tools for Kerr QNM solvers.",
+    "longDescription": "Develop, inspect, edit, run, test, and audit Kerr black-hole perturbation projects directly in Codex Cloud checkouts with Julia, CPython, NumPy, SciPy, cross-language protocol checks, a reproducible bundled toolchain, and Git-aware diagnostics. No MCP server or hosted compute service is required.",
     "developerName": "Kerr QNM Toolkit contributors",
     "category": "Developer Tools",
     "capabilities": [
@@ -29,9 +30,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Inspect my remote Kerr QNM solver workspace.",
-      "Run the Julia-Python numerical canary in the Linux container.",
-      "Review, patch, and test this Julia and Python solver safely."
+      "Inspect this Kerr QNM solver repository.",
+      "Run the local Julia-Python numerical canary.",
+      "Review, patch, and test this Julia and Python solver."
     ],
     "brandColor": "#5A31A5",
     "composerIcon": "./assets/kerr-qnm-toolkit.png",

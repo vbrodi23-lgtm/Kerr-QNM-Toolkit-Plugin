@@ -1,4 +1,4 @@
-"""Bounded local execution helpers for the Kerr QNM Toolkit MCP server."""
+"""Bounded local execution helpers for the Kerr QNM Toolkit."""
 
 from __future__ import annotations
 
