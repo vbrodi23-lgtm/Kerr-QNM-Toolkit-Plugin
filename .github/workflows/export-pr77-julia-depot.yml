@@ -1,0 +1,59 @@
+name: Export PR77 Julia dependency depot
+
+on:
+  push:
+    branches:
+      - agent/export-pr77-julia-source-20260901
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      JULIA_NUM_THREADS: 1
+      JULIA_NUM_PRECOMPILE_TASKS: 4
+      JULIA_PKG_PRECOMPILE_AUTO: 0
+    steps:
+      - name: Checkout PR77 source
+        uses: actions/checkout@v4
+        with:
+          repository: vbrodi23-lgtm/Kerr-QNM_Windows-Solver
+          ref: 17a4bd8fa403154afb132e6894f58ce5f4387d0f
+          path: solver
+          fetch-depth: 1
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.10.11'
+      - name: Materialize exact M02 project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p workspace/vendor
+          cp -a solver/src/windows_solver/data/julia/m02_project workspace/m02_project
+          cp -a solver/src/windows_solver/data/julia/GeneralizedSasakiNakamura.jl workspace/vendor/
+          cp -a solver/src/windows_solver/data/julia/SpinWeightedSpheroidalHarmonics.jl workspace/vendor/
+          cp workspace/m02_project/Manifest.seed.toml workspace/m02_project/Manifest.toml
+          julia --startup-file=no --history-file=no --project=workspace/m02_project -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+          julia --startup-file=no --history-file=no --project=workspace/m02_project -e 'using DifferentialEquations, JSON, SciMLBase, GeneralizedSasakiNakamura; println("PR77_M02_PROJECT_READY")'
+      - name: Package relocatable dependency depot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bundle/depot
+          for d in packages artifacts scratchspaces preferences; do
+            if [ -e "$HOME/.julia/$d" ]; then cp -a "$HOME/.julia/$d" bundle/depot/; fi
+          done
+          cp -a workspace bundle/
+          printf '%s\n' '17a4bd8fa403154afb132e6894f58ce5f4387d0f' > bundle/PR77_SOURCE_SHA.txt
+          tar -C bundle -czf pr77-m02-contained-environment.tar.gz .
+          sha256sum pr77-m02-contained-environment.tar.gz > pr77-m02-contained-environment.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr77-m02-contained-environment
+          path: |
+            pr77-m02-contained-environment.tar.gz
+            pr77-m02-contained-environment.tar.gz.sha256
+          retention-days: 1
