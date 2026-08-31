@@ -1,0 +1,36 @@
+name: Export PR77 Julia source
+
+on:
+  push:
+    branches:
+      - agent/export-pr77-julia-source-20260901
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR77 source
+        uses: actions/checkout@v4
+        with:
+          repository: vbrodi23-lgtm/Kerr-QNM_Windows-Solver
+          ref: 17a4bd8fa403154afb132e6894f58ce5f4387d0f
+          path: solver
+          fetch-depth: 1
+      - name: Stage Julia source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bundle/src/windows_solver/data/julia
+          cp -a solver/src/windows_solver/data/julia/m02_project bundle/src/windows_solver/data/julia/
+          cp -a solver/src/windows_solver/data/julia/GeneralizedSasakiNakamura.jl bundle/src/windows_solver/data/julia/
+          cp -a solver/src/windows_solver/data/julia/SpinWeightedSpheroidalHarmonics.jl bundle/src/windows_solver/data/julia/
+          printf '%s\n' '17a4bd8fa403154afb132e6894f58ce5f4387d0f' > bundle/PR77_SOURCE_SHA.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr77-contained-julia-source
+          path: bundle
+          retention-days: 1
