@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JULIA_NUM_THREADS: 1
+      JULIA_NUM_PRECOMPILE_TASKS: 1
       JULIA_PKG_PRECOMPILE_AUTO: 0
     steps:
       - name: Checkout PR77 source
@@ -35,13 +36,13 @@ jobs:
           cp -a solver/src/windows_solver/data/julia/GeneralizedSasakiNakamura.jl workspace/vendor/
           cp -a solver/src/windows_solver/data/julia/SpinWeightedSpheroidalHarmonics.jl workspace/vendor/
           cp workspace/m02_project/Manifest.seed.toml workspace/m02_project/Manifest.toml
-          julia --startup-file=no --history-file=no --project=workspace/m02_project -e 'using Pkg; Pkg.instantiate()'
+          julia --startup-file=no --history-file=no --project=workspace/m02_project -e 'using Pkg; Pkg.instantiate(); using DifferentialEquations; using GeneralizedSasakiNakamura; println("scientific dependencies loaded")'
       - name: Package relocatable dependency depot
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p bundle/depot
-          for d in packages artifacts scratchspaces preferences; do
+          for d in packages artifacts scratchspaces preferences compiled; do
             if [ -e "$HOME/.julia/$d" ]; then cp -a "$HOME/.julia/$d" bundle/depot/; fi
           done
           cp -a workspace bundle/
